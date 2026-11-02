@@ -7,3 +7,22 @@ export function redeem(s,child,reward,id,date){const r=s.rewards.find(x=>x.id===
 export function submitQuiz(s,child,quiz,answers,date,id){const q=s.quizzes.find(q=>q.id===quiz);if(!q||s.attempts.some(a=>a.child===child&&a.quiz===quiz&&a.date===date))throw Error('تم احتساب هذا الاختبار اليوم بالفعل');const correct=q.questions.reduce((n,x,i)=>n+(Number(answers[i])===x.correct?1:0),0);s.attempts.push({id,child,quiz,name:q.name,date,correct,total:q.questions.length,points:Math.round(q.points*correct/q.questions.length)});}
 export function weekStart(date=today()){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-d.getDay());return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 export function validate(s){if(!s||s.version!==1)throw Error('نسخة احتياطية غير مدعومة');for(const k of ['children','criteria','evaluations','rewards','redemptions','quizzes','attempts'])if(!Array.isArray(s[k])||s[k].length>100000)throw Error('بيانات غير صالحة');for(const key of ['children','criteria','rewards','quizzes'])for(const row of s[key])if(typeof row.id!=='string'||!/^[-a-zA-Z0-9_]{1,80}$/.test(row.id))throw Error('معرف غير صالح');for(const q of s.quizzes)if(typeof q.name!=='string'||!Number.isInteger(q.points)||q.points<0||!Array.isArray(q.questions)||!q.questions.length||q.questions.some(x=>typeof x.text!=='string'||!Array.isArray(x.options)||x.options.length!==3||!x.options.every(o=>typeof o==='string')||![0,1,2].includes(x.correct)))throw Error('اختبار غير صالح');for(const r of s.rewards)if(typeof r.name!=='string'||!Number.isInteger(r.cost)||r.cost<1)throw Error('مكافأة غير صالحة');const ids=new Set(s.children.map(c=>c.id));if(ids.size!==s.children.length)throw Error('معرفات مكررة');for(const c of s.children)if(typeof c.name!=='string'||c.name.length>80||!Number.isInteger(c.age)||c.age<1||c.age>25||!Number.isInteger(c.goal)||c.goal<1)throw Error('بيانات طفل غير صالحة');for(const c of s.criteria)if(typeof c.name!=='string'||c.points.length!==3||c.points.some(p=>!Number.isInteger(p)||p<0||p>1000))throw Error('نقاط غير صالحة');const seen=new Set();for(const e of s.evaluations){const key=[e.child,e.criterion,e.date].join('|');if(seen.has(key))throw Error('تقييم يومي مكرر');seen.add(key)}for(const e of [...s.evaluations,...s.attempts])if(!ids.has(e.child)||!Number.isInteger(e.points)||e.points<0||!/^\d{4}-\d{2}-\d{2}$/.test(e.date))throw Error('سجل غير صالح');for(const r of s.redemptions)if(!ids.has(r.child)||!Number.isInteger(r.cost)||r.cost<1)throw Error('مكافأة غير صالحة');for(const c of s.children)if(balance(s,c.id)<0)throw Error('هذا التعديل يجعل الرصيد أقل من النقاط المستبدلة؛ راجع سجل المكافآت');return s;}
+export function requestError(status,data={},path=''){
+ const message=data?.message||'';
+ if(message==='Already evaluated')return 'هذه المهمة مقيّمة ومعتمدة لهذا اليوم بالفعل، لذلك لن تُحتسب مرة ثانية. راجع إنجازاتك أو اختر مهمة أو تاريخًا آخر.';
+ if(message==='Already approved')return 'اعتمد ولي الأمر هذا الطلب بالفعل. راجع سجل طلباتك.';
+ if(message==='Request already reviewed')return 'تمت مراجعة الطلب مسبقًا. حُدّثت القائمة؛ لا يمكن اعتماده مرتين.';
+ if(message==='Revision conflict')return 'حُدّثت بيانات العائلة من جهاز آخر. حدّث البيانات ثم أعد المحاولة.';
+ if(path.startsWith('/functions/')&&data?.error)return data.error;
+ if(status===401)return 'انتهت الجلسة، سجّل الدخول من جديد.';
+ if(status===403)return 'حسابك لا يملك صلاحية هذه العملية. سجّل الدخول بالحساب المناسب.';
+ if(status===409)return 'تعذر إتمام العملية لأن السجل موجود أو تغيّر. حدّث الصفحة وراجع سجل الطلبات.';
+ return 'تعذر تنفيذ الطلب. تحقق من الاتصال وتحديث قاعدة البيانات.';
+}
+export function submissionStatus(s,requests,child,criterion,date){
+ const evaluation=s.evaluations.find(e=>e.child===child&&e.criterion===criterion&&e.date===date);
+ if(evaluation)return {blocked:true,text:`هذه المهمة معتمدة لهذا اليوم بالفعل (${evaluation.points} نقطة). لن تُحتسب مرة ثانية.`};
+ const request=requests.find(r=>r.child_id===child&&r.criterion_id===criterion&&r.day===date);
+ if(request?.status==='approved')return {blocked:true,text:'اعتمد ولي الأمر هذا الطلب بالفعل. راجع سجل طلباتك.'};
+ return {blocked:false,text:request?.status==='pending'?'لديك طلب معلّق لهذه المهمة واليوم. الإرسال سيحدّث الطلب نفسه.':request?.status==='rejected'?'يمكنك تعديل المحاولة وإعادة إرسالها لولي الأمر.':''};
+}
