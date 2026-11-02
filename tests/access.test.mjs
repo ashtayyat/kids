@@ -33,6 +33,20 @@ test('database enforces family isolation, parent roles and atomic approval',asyn
  await db.query("select public.submit_point_request('read','2026-01-01',2,'قراءة')");req=(await db.query("select * from public.point_requests where criterion_id='read'")).rows[0];
  await as(parent);await db.query("select public.review_point_request($1,false,0,'حاول مرة أخرى')",[req.id]);await as(child);await db.query("select public.submit_point_request('read','2026-01-01',2,'حاولت مجددًا')");
  assert.equal((await db.query("select * from public.point_requests where criterion_id='read'")).rows[0].status,'pending');
+ // V3 supports approval of a replacement without double counting or spending underflow.
+ await db.exec('reset role');await db.exec(readFileSync(new URL('../migration-v3.sql',import.meta.url),'utf8'));
+ await as(child);await db.query("select public.submit_point_request('study','2026-01-01',1,'طلب تعديل')");
+ assert.equal((await db.query('select public.load_family() d')).rows[0].d.data.evaluations[0].points,4);
+ req=(await db.query("select * from public.point_requests where criterion_id='study'")).rows[0];
+ await as(parent);await db.query("select public.review_point_request($1,true,1,'تم التعديل')",[req.id]);
+ let replacement=(await db.query('select public.load_family() d')).rows[0].d;
+ assert.equal(replacement.data.evaluations.length,1);assert.equal(replacement.data.evaluations[0].points,2);
+ await assert.rejects(db.query("select public.review_point_request($1,true,1,'')",[req.id]));
+ replacement.data.redemptions=[{id:'redeemed',child:'a',cost:2,date:'2026-01-01',name:'قصة'}];
+ await db.query('select public.save_family($1,$2)',[JSON.stringify(replacement.data),replacement.revision]);
+ await as(child);await db.query("select public.submit_point_request('study','2026-01-01',0,'إعادة مراجعة')");
+ await as(parent);await assert.rejects(db.query("select public.review_point_request($1,true,0,'')",[req.id]));
+ assert.equal((await db.query('select public.load_family() d')).rows[0].d.data.evaluations[0].points,2);
  // No missing membership may turn a managed child into a parent.
  await db.exec('reset role');await db.query('delete from public.family_members where user_id=$1',[child]);await as(child);await assert.rejects(db.query('select public.my_membership()'));
  await db.exec("reset role;set role anon");await assert.rejects(db.query('select public.load_family()'));await assert.rejects(db.query('select * from public.family_state'));
