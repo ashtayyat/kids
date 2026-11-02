@@ -1,2 +1,3 @@
+# Authentication is explicitly verified with getUser(token) inside the handler.
 [functions.manage-users]
-verify_jwt = true
+verify_jwt = false
