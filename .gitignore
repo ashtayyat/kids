@@ -2,3 +2,5 @@
 .env.*
 node_modules/
 *.local
+dist/
+.openai/
