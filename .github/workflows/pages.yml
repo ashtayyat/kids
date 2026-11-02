@@ -21,11 +21,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
       - run: node --test tests/*.test.mjs
       - name: Prepare public files only
         run: |
           mkdir public
-          cp index.html app.js core.mjs style.css public/
+          cp index.html app.js core.mjs identity.mjs style.css public/
+      - name: Configure shared project
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/build-config.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
