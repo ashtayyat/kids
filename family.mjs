@@ -1,6 +1,6 @@
 export const isPrimary=m=>!!(m&&m.active!==false&&m.role==='parent'&&(m.is_primary===true||m.user_id&&m.user_id===m.owner_id));
 export const isParent=m=>!!(m?.role==='parent'&&m.active!==false);
-export const POINT_PERMISSIONS={reset_points:'تصفير النقاط (مهمة محددة أو جميع نقاط الطفل)',deduct_points:'خصم النقاط مع تسجيل السبب'};
+export const POINT_PERMISSIONS={reset_points:'تصفير النقاط (المهام ونقاط الألعاب للفرد أو للجميع)',deduct_points:'خصم النقاط مع تسجيل السبب'};
 export const can=(m,permission)=>isPrimary(m)||!!(m?.active!==false&&m?.role==='parent'&&Object.hasOwn(POINT_PERMISSIONS,permission)&&Array.isArray(m.permissions)&&m.permissions.includes(permission));
 export function permittedRoutes(m){if(m?.role==='child')return ['home','games','daily','requests','suggestions','journey','rewards','quizzes','deductions'];if(isPrimary(m))return ['home','games','daily','children','quizzes','points','rewards','newreward','deductions','criteria','reports','accounts','requests','settings','suggestions','audit','cleanup','demo','journey','encourage'];return ['home','games','daily','children','criteria','quizzes','deductions','newreward','requests','reports','suggestions','encourage','journey','rewards',...((can(m,'reset_points')||can(m,'deduct_points'))?['points']:[])];}
 export const validPhoto=p=>typeof p==='string'&&p.length<=100000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p);

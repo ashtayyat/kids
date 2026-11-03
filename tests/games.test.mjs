@@ -3,6 +3,7 @@ test('five stages scale memory pairs and rewards respect completed stages and da
 test('server memory and cooperative space enforce hidden answers, progression, daily caps and isolation',async()=>{const db=new PGlite();try{
  await db.exec(`create schema auth;create role anon;create role authenticated;create table auth.users(id uuid primary key,raw_app_meta_data jsonb default '{}');create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated,anon;`);
  await db.exec(readFileSync(new URL('../upgrade-latest.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migration-v12.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migration-v13.sql',import.meta.url),'utf8'));await db.exec(readFileSync(new URL('../migration-v13.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../migration-v14.sql',import.meta.url),'utf8'));
  const p='c0000000-0000-0000-0000-000000000001',a='c0000000-0000-0000-0000-000000000002',b='c0000000-0000-0000-0000-000000000003',o='c0000000-0000-0000-0000-000000000004',p2='c0000000-0000-0000-0000-000000000005';for(const id of[p,a,b,o,p2])await db.query('insert into auth.users(id) values($1)',[id]);
  async function as(id){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')}
  const view=async(id)=>(await db.query('select public.game_view($1) v',[id])).rows[0].v;

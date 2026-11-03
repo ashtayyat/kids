@@ -1,3 +1,5 @@
+import {can} from './family.mjs';
+import {balance} from './core.mjs';
 export const DIFFICULTIES=['','سهل','متوسط','صعب'];
 export const GAME_NAMES={memory:'ذاكرة الصور',space:'مهمة الفضاء'};
 export const MEMORY_ICONS=['🦊','🐼','🦁','🐰','🦋','🐬','🦉','🐢','🐝','🐙'];
@@ -13,7 +15,20 @@ export function createDemoGames(C){let settings={daily_cap:20,max_difficulty:3,e
  const view=(s,m)=>{if(!s||m.role==='child'&&!s.participants.includes(m.child_id))throw Error('هذه اللعبة ليست لك');const data=s.game==='memory'?{cards:s.deck.map((v,i)=>s.matched.includes(i)||s.open.includes(i)?v:null),matched:s.matched,open:s.open,moves:s.moves,limit:s.limit}:{players:s.players.map(p=>({child:p.child,name:p.name,index:p.index,total:p.questions.length,question:m.role==='parent'||m.child_id===p.child?((({correct,...q})=>q)(p.questions[p.index]||{})):null}))};return structuredClone({id:s.id,game:s.game,difficulty:s.difficulty,stage:s.stage,participants:s.participants,status:s.status,revision:s.revision,data,awards:s.awards||[]})};
  const award=s=>{s.awards=[];for(const child of s.participants){const day=C.today(),amount=rewardAmount(progress,child,s.game,s.difficulty,s.stage,day,settings.daily_cap),exists=progress.some(p=>p.child===child&&p.game===s.game&&p.difficulty===s.difficulty&&p.stage===s.stage&&p.day===day);if(exists)continue;progress.push({child,game:s.game,difficulty:s.difficulty,stage:s.stage,day,points:amount});s.awards.push({child,points:amount});const total=s.game==='memory'?s.deck.length/2:2+s.stage;if(!child.startsWith('parent:'))C.state.attempts.push({id:demoId(),child,quiz:`game_${s.game}_${s.difficulty}_${s.stage}`,kind:'game',name:`${GAME_NAMES[s.game]} — مرحلة ${s.stage} — صعوبة ${s.difficulty}`,date:day,correct:total,total,points:amount})}};
  return {reset(){sessions=[];progress=[];settings={daily_cap:20,max_difficulty:3,enabled:true}},async call(name,a={}){const m=C.membership,parent=m.role==='parent';
-  if(name==='game_overview')return structuredClone({settings,children:roster().filter(c=>parent||c.id===m.child_id).map(({id,name,age,role})=>({id,name,age,role})),sessions:sessions.filter(s=>parent||s.participants.includes(m.child_id)).slice(-15).reverse(),progress:progress.filter(p=>parent||p.child===m.child_id),day:C.today()});
+  if(name==='game_overview')return structuredClone({settings,can_reset:can(m,'reset_points'),revision:0,children:roster().filter(c=>parent||c.id===m.child_id).map(({id,name,age,role})=>({id,name,age,role})),sessions:sessions.filter(s=>parent||s.participants.includes(m.child_id)).slice(-15).reverse(),progress:progress.filter(p=>parent||p.child===m.child_id).map(p=>({...p,points:p.reset?0:p.points,total_points:p.reset?0:p.points,daily_used:p.points})),day:C.today()});
+  if(name==='reset_game_points'){
+   if(!can(m,'reset_points'))throw Error('ليست لديك صلاحية تصفير النقاط');
+   if(!a.p_reason?.trim())throw Error('أدخل سبب التصفير');
+   if(a.p_player&&!roster().some(c=>c.id===a.p_player))throw Error('اختر مشاركًا صحيحًا');
+   const next=structuredClone(C.state),removed=next.attempts.filter(e=>e.kind==='game'&&(!a.p_player||e.child===a.p_player));
+   next.attempts=next.attempts.filter(e=>!removed.some(r=>r.id===e.id));
+   if(next.children.some(c=>(!a.p_player||c.id===a.p_player)&&balance(next,c.id)<0))throw Error('لا يمكن التصفير لأن بعض نقاط الألعاب صُرفت على مكافآت؛ راجع سجل المكافآت أولًا.');
+   for(const child of new Set(removed.map(e=>e.child)))(next.resetArchive??=[]).push({id:demoId(),child,date:C.today(),kind:'game_reset',note:a.p_reason,records:{attempts:removed.filter(e=>e.child===child)}});
+   C.state.attempts=next.attempts;C.state.resetArchive=next.resetArchive;
+   for(const p of progress)if(!a.p_player||p.child===a.p_player)p.reset=true;
+   for(const s of sessions)for(const a2 of s.awards||[])if(!a.p_player||a2.child===a.p_player){a2.reset=true;a2.points=0}
+   return;
+  }
   if(name==='configure_games'){if(!parent)throw Error('لولي الأمر فقط');settings={daily_cap:a.p_cap,max_difficulty:a.p_max,enabled:a.p_enabled};return}
   if(name==='start_game'){if(!settings.enabled||a.p_difficulty>settings.max_difficulty)throw Error('اللعبة غير متاحة');const ids=a.p_children;if(!ids.length||!parent&&(a.p_game!=='memory'||ids.length!==1||ids[0]!==m.child_id))throw Error('اختر اللاعبين');if(a.p_game==='space'&&ids.length<2)throw Error('اختر مشاركين على الأقل');for(const id of ids)if(!unlocked(progress,id,a.p_game,a.p_difficulty,a.p_stage))throw Error('أكمل المرحلة السابقة أولًا');const pairs=memoryPairs(a.p_difficulty,a.p_stage);const s={id:demoId(),game:a.p_game,difficulty:a.p_difficulty,stage:a.p_stage,participants:ids,status:'active',revision:0,deck:shuffle(Array.from({length:pairs},(_,i)=>[i,i]).flat()),matched:[],open:[],moves:0,limit:a.p_difficulty===1?0:pairs*(a.p_difficulty===2?4:3),players:ids.map(id=>{const c=roster().find(c=>c.id===id);return {child:id,name:c.name,index:0,questions:Array.from({length:2+a.p_stage},(_,i)=>{const n=c.age<8?i+1:(i+1)*(a.p_difficulty+2);return {text:`${n} + ${a.p_stage} = ؟`,options:[n+a.p_stage,n+a.p_stage+1,n+a.p_stage+2],correct:0}})}})};sessions.push(s);return s.id}
   const s=sessions.find(s=>s.id===a.p_session);if(name==='game_view')return view(s,m);if(!s||s.status!=='active')throw Error('انتهت هذه اللعبة');if(!parent&&!s.participants.includes(m.child_id))throw Error('هذه اللعبة ليست لك');let correct=false;
