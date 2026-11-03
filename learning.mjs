@@ -2,13 +2,14 @@ export const STANDARD_LEVELS=['لم يُنجز','أُنجز بمساعدة','أ�
 export const levelLabels=c=>Array.isArray(c?.labels)&&c.labels.length===3?c.labels:STANDARD_LEVELS;
 export const CATEGORIES=['معلومات عامة','رياضة','رياضيات','إنجليزي','للمبتدئين'];
 export function assessmentSummary(state,child,date,requests=[]){
- const criteria=state.criteria.filter(c=>!c.assigned_child||c.assigned_child===child);
+ const criteria=state.criteria.filter(c=>!c.archived&&(!c.assigned_child||c.assigned_child===child));
  const evaluations=new Map(state.evaluations.filter(e=>e.child===child&&e.date===date).map(e=>[e.criterion,e]));
  const maxPoints=c=>Math.max(0,...c.points);
  const dailyMax=criteria.reduce((n,c)=>n+maxPoints(c),0);
  const missing=criteria.filter(c=>!evaluations.has(c.id)).map(c=>({...c,maxPoints:maxPoints(c),requestStatus:requests.find(r=>r.child_id===child&&r.criterion_id===c.id&&r.day===date)?.status||null}));
  return {total:criteria.length,assessed:criteria.length-missing.length,dailyMax,weeklyMax:dailyMax*7,earned:criteria.reduce((n,c)=>n+(evaluations.get(c.id)?.points||0),0),missing,remainingMax:missing.reduce((n,c)=>n+c.maxPoints,0)};
 }
+export function archiveCriterion(state,id){const c=state.criteria.find(c=>c.id===id&&!c.archived);if(!c)throw Error('المعيار غير موجود أو حُذف بالفعل');c.archived=true;return c;}
 export const extraCriteria=()=>[
  {id:'homework',name:'حل الواجبات',points:[0,2,4]},
  ...[['fajr','الفجر'],['dhuhr','الظهر'],['asr','العصر'],['maghrib','المغرب'],['isha','العشاء']].map(([id,name])=>({id:'prayer_'+id,name:'صلاة '+name,labels:['في وقتها','جماعة','قضاء'],points:[3,5,1]}))
