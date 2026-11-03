@@ -1,5 +1,6 @@
--- تحديث شامل حتى v19، مع الحفاظ على البيانات.
+-- جميع التحديثات حتى v20؛ شغّل الملف كاملًا.
 begin;
+
 -- schema.sql
 -- شغّل هذا الملف مرة واحدة في Supabase SQL Editor.
 create table if not exists public.family_state (
@@ -44,6 +45,7 @@ begin
 end $$;
 revoke all on function public.save_family(jsonb,bigint) from public,anon;
 grant execute on function public.save_family(jsonb,bigint) to authenticated;
+
 -- migration-v2.sql
 -- شغّل schema.sql أولًا عند التثبيت الجديد، ثم هذا الملف. يحافظ على بيانات النسخة الأولى.
 create table if not exists public.family_members(
@@ -196,6 +198,7 @@ end $$;
 
 revoke all on function public.save_family(jsonb,bigint) from public,anon;
 grant execute on function public.save_family(jsonb,bigint) to authenticated;
+
 -- migration-v3.sql
 -- تفعيل طلب تعديل التقييم المعتمد مع الحفاظ على سجل واحد ونقاط غير مكررة.
 -- شغّل مرة واحدة بعد migration-v2.sql.
@@ -240,6 +243,7 @@ begin
 end $$;
 revoke all on function public.review_point_request(uuid,boolean,integer,text) from public,anon;
 grant execute on function public.review_point_request(uuid,boolean,integer,text) to authenticated;
+
 
 -- migration-v4.sql
 -- خصم النقاط وتصفير نقاط التجربة. شغّله بعد migration-v3.sql.
@@ -356,6 +360,7 @@ begin
 end $$;
 revoke all on function public.review_point_request(uuid,boolean,integer,text) from public,anon;
 grant execute on function public.review_point_request(uuid,boolean,integer,text) to authenticated;
+
 
 
 -- migration-v5.sql
@@ -672,6 +677,7 @@ create trigger verify_family_member_creation before insert on public.family_memb
 drop policy if exists own_family_read on public.family_state;
 create policy own_family_read on public.family_state for select to authenticated using(public.is_family_admin(owner_id));
 do $$ begin if exists(select 1 from pg_roles where rolname='service_role') then grant select,insert,update,delete on public.family_members,public.family_audit,public.family_suggestions to service_role;grant select on public.family_state to service_role;end if;end $$;
+
 -- migration-v6.sql
 -- تفويض صلاحيات النقاط لولي الأمر الثاني. شغّل بعد v5.
 alter table public.family_members add column if not exists permissions text[] not null default '{}';
@@ -744,6 +750,7 @@ end $$;
 revoke all on function public.manage_points(text,text,text,integer,text,bigint) from public,anon;
 grant execute on function public.manage_points(text,text,text,integer,text,bigint) to authenticated;
 
+
 -- migration-v7.sql
 -- إصلاح تعديل الاسم بصورة مستقلة عن دالة إنشاء المستخدمين. شغّل بعد v6.
 create or replace function public.rename_family_member(p_user uuid,p_name text) returns void
@@ -767,6 +774,7 @@ begin
 end $$;
 revoke all on function public.rename_family_member(uuid,text) from public,anon;
 grant execute on function public.rename_family_member(uuid,text) to authenticated;
+
 -- migration-v8.sql
 -- العمل اليومي مشترك بين وليي الأمر. شغّل بعد v7.
 create or replace function public.save_family(p_data jsonb,p_revision bigint) returns bigint
@@ -854,6 +862,7 @@ begin
 end $$;
 revoke all on function public.review_suggestion(uuid,boolean,integer,text) from public,anon;grant execute on function public.review_suggestion(uuid,boolean,integer,text) to authenticated;
 
+
 -- migration-v9.sql
 -- إضافة الصلاة والواجبات والتحديات التعليمية. شغّل بعد v8.
 create or replace function public.submit_quiz(p_quiz text,p_child text,p_answers integer[]) returns void
@@ -900,6 +909,7 @@ begin
   if changed then update public.family_state set data=d,revision=revision+1,updated_at=now() where owner_id=f.owner_id;end if;
  end loop;
 end $seed$;
+
 -- migration-v10.sql
 -- حذف معيار من التقييم الجديد مع حفظ السجل. شغّل بعد v9.
 create or replace function public.delete_criterion(p_criterion text,p_revision bigint) returns void
@@ -964,6 +974,7 @@ begin
 end $$;
 revoke all on function public.submit_point_request(text,date,integer,text) from public,anon;
 grant execute on function public.submit_point_request(text,date,integer,text) to authenticated;
+
 
 
 
@@ -1076,6 +1087,7 @@ begin
  perform public.log_family_event(m.owner_id,'استبدال مكافأة',p_child,r->>'name');
 end $$;
 revoke all on function public.redeem_reward(text,text,bigint) from public,anon;grant execute on function public.redeem_reward(text,text,bigint) to authenticated;
+
 
 -- migration-v12.sql
 -- ألعاب عائلية بمراحل ونقاط يومية محفوظة على الخادم. شغّل بعد v11.
@@ -1265,6 +1277,7 @@ begin
 end $$;
 revoke all on function public.purge_child_data(uuid,text) from public,anon,authenticated;
 
+
 -- migration-v13.sql
 -- مشاركة أولياء الأمر بحساباتهم الحالية، دون إنشاء ملفات أطفال لهم.
 -- Private roster: parent IDs use a namespace rejected by child-profile validation.
@@ -1365,6 +1378,7 @@ begin
 end $$;
 revoke all on function public.on_family_auth_delete() from public,anon,authenticated;
 
+
 -- migration-v14.sql
 -- تصفير نقاط الألعاب دون حذف المراحل أو تجاوز حد مكافآت اليوم. شغّل بعد v13.
 alter table public.family_game_completions add column if not exists reset_at timestamptz;
@@ -1428,6 +1442,7 @@ begin
 end $$;
 revoke all on function public.reset_game_points(text,text,bigint) from public,anon;
 grant execute on function public.reset_game_points(text,text,bigint) to authenticated;
+
 
 -- migration-v15.sql
 -- صور أدلة اختيارية، تخصيص الطفل، وعبارات التشجيع. شغّل بعد v14.
@@ -1512,6 +1527,7 @@ end $$;
 revoke all on function public.add_encouragement_phrase(text) from public,anon;
 grant execute on function public.add_encouragement_phrase(text) to authenticated;
 notify pgrst,'reload schema';
+
 -- migration-v16.sql
 -- رفض واضح وإعادة المقترحات وتعديل نصوصها مع منع الكتابة فوق تعديل أحدث.
 alter table public.family_suggestions add column if not exists revision bigint not null default 0;
@@ -1553,6 +1569,7 @@ end $$;
 revoke all on function public.review_family_suggestion(uuid,text,text,text,integer,text,bigint) from public,anon;
 grant execute on function public.review_family_suggestion(uuid,text,text,text,integer,text,bigint) to authenticated;
 notify pgrst,'reload schema';
+
 -- migration-v17.sql
 -- نقاط الألعاب تُعتمد من ولي الأمر، وتحويل الأمنية إلى بند خصم دون تطبيق الخصم.
 -- Existing earned points remain approved; new completions explicitly start pending.
@@ -1678,6 +1695,7 @@ revoke all on function public.suggestion_to_deduction(uuid,text,text,integer,big
 grant execute on function public.suggestion_to_deduction(uuid,text,text,integer,bigint) to authenticated;
 
 notify pgrst,'reload schema';
+
 -- migration-v18.sql
 -- إخفاء طلب الإنجاز المرفوض بعد التأكيد، مع حفظ النقاط المعتمدة والسجل الإداري.
 alter table public.point_requests add column if not exists deleted_at timestamptz;
@@ -1760,6 +1778,7 @@ end $$;
 revoke all on function public.review_point_request(uuid,boolean,integer,text) from public,anon;
 grant execute on function public.review_point_request(uuid,boolean,integer,text) to authenticated;
 notify pgrst,'reload schema';
+
 -- migration-v19.sql
 -- إنجاز واحد يوميًا افتراضيًا، تكرار مضبوط، تحويل المعايير، وتصفير الألعاب القديمة.
 alter table public.point_requests add column if not exists occurrence integer not null default 1 check(occurrence>0);
@@ -1977,4 +1996,70 @@ revoke all on function public.criterion_to_deduction(text,text,text,integer,bool
 grant execute on function public.criterion_to_deduction(text,text,text,integer,boolean,bigint) to authenticated;
 
 notify pgrst,'reload schema';
+
+-- migration-v20.sql
+-- طلب الطفل استبدال المكافأة، واعتماد ولي الأمر قبل الخصم.
+create table if not exists public.reward_requests(
+ id uuid primary key default gen_random_uuid(),
+ owner_id uuid not null references auth.users(id) on delete cascade,
+ requester uuid not null references auth.users(id) on delete cascade,
+ child_id text not null,reward_id text not null,reward_name text not null,
+ cost integer not null check(cost>0),note text not null default '' check(length(note)<=300),
+ status text not null default 'pending' check(status in('pending','approved','rejected')),
+ review_note text not null default '' check(length(review_note)<=300),
+ created_at timestamptz not null default now(),reviewed_at timestamptz
+);
+create unique index if not exists reward_request_pending on public.reward_requests(owner_id,child_id,reward_id) where status='pending';
+alter table public.reward_requests enable row level security;
+revoke all on public.reward_requests from public,anon,authenticated;
+grant select on public.reward_requests to authenticated;
+drop policy if exists reward_request_read on public.reward_requests;
+create policy reward_request_read on public.reward_requests for select to authenticated using(
+ exists(select 1 from public.family_members m where m.user_id=auth.uid() and m.active and m.owner_id=reward_requests.owner_id and (m.role='parent' or (m.role='child' and m.child_id=reward_requests.child_id and reward_requests.requester=auth.uid())))
+);
+create or replace function public.request_reward(p_reward text,p_note text) returns uuid language plpgsql security definer set search_path='' as $$
+declare m public.family_members;d jsonb;r jsonb;available numeric;request_id uuid;
+begin
+ select * into m from public.family_members where user_id=auth.uid() and active and role='child';if not found then raise exception 'Child account required' using errcode='42501';end if;
+ if p_note is null or length(p_note)>300 then raise exception 'Invalid request';end if;
+ select data into d from public.family_state where owner_id=m.owner_id for update;
+ if not exists(select 1 from jsonb_array_elements(d->'children') c where c->>'id'=m.child_id) then raise exception 'Unknown child';end if;
+ select value into r from jsonb_array_elements(d->'rewards') where value->>'id'=p_reward and not coalesce((value->>'archived')::boolean,false);if r is null then raise exception 'Unknown reward';end if;
+ if exists(select 1 from public.reward_requests where owner_id=m.owner_id and child_id=m.child_id and reward_id=p_reward and status='pending') then raise sqlstate 'PT409' using message='Reward request pending';end if;
+ select coalesce(sum((e->>'points')::numeric),0) into available from (select value e from jsonb_array_elements(d->'evaluations') union all select value from jsonb_array_elements(d->'attempts') union all select value from jsonb_array_elements(coalesce(d->'adjustments','[]'))) ledger where e->>'child'=m.child_id;
+ available:=available-coalesce((select sum((x->>'cost')::numeric) from jsonb_array_elements(d->'redemptions') x where x->>'child'=m.child_id),0);
+ if available<(r->>'cost')::integer then raise exception 'Reward balance insufficient';end if;
+ insert into public.reward_requests(owner_id,requester,child_id,reward_id,reward_name,cost,note) values(m.owner_id,m.user_id,m.child_id,p_reward,r->>'name',(r->>'cost')::integer,trim(p_note)) returning id into request_id;
+ perform public.log_family_event(m.owner_id,'طلب استبدال مكافأة',m.child_id,r->>'name');
+ return request_id;
+end $$;
+create or replace function public.review_reward_request(p_id uuid,p_approve boolean,p_note text) returns void language plpgsql security definer set search_path='' as $$
+declare m public.family_members;r public.reward_requests;d jsonb;reward jsonb;available numeric;
+begin
+ select * into m from public.family_members where user_id=auth.uid() and active and role='parent';if not found then raise exception 'Parent account required' using errcode='42501';end if;
+ if p_approve is null or p_note is null or length(p_note)>300 then raise exception 'Invalid review';end if;
+ select data into d from public.family_state where owner_id=m.owner_id for update;
+ select * into r from public.reward_requests where id=p_id and owner_id=m.owner_id for update;
+ if not found or r.status<>'pending' then raise sqlstate 'PT409' using message='Reward request already reviewed';end if;
+ if p_approve then
+  if not exists(select 1 from public.family_members where user_id=r.requester and owner_id=m.owner_id and active and role='child' and child_id=r.child_id) or not exists(select 1 from jsonb_array_elements(d->'children') c where c->>'id'=r.child_id) then raise exception 'Reward child unavailable';end if;
+  select value into reward from jsonb_array_elements(d->'rewards') where value->>'id'=r.reward_id and not coalesce((value->>'archived')::boolean,false);
+  if reward is null then raise exception 'Unknown reward';end if;
+  if (reward->>'cost')::integer<>r.cost then raise sqlstate 'PT409' using message='Reward cost changed';end if;
+  select coalesce(sum((e->>'points')::numeric),0) into available from (select value e from jsonb_array_elements(d->'evaluations') union all select value from jsonb_array_elements(d->'attempts') union all select value from jsonb_array_elements(coalesce(d->'adjustments','[]'))) ledger where e->>'child'=r.child_id;
+  available:=available-coalesce((select sum((x->>'cost')::numeric) from jsonb_array_elements(d->'redemptions') x where x->>'child'=r.child_id),0);
+  if available<r.cost then raise exception 'Reward balance insufficient';end if;
+  d:=jsonb_set(d,'{redemptions}',(d->'redemptions')||jsonb_build_array(jsonb_build_object('id',gen_random_uuid(),'child',r.child_id,'reward',r.reward_id,'name',r.reward_name,'cost',r.cost,'date',(now() at time zone 'Asia/Amman')::date::text,'request_id',r.id)));
+  if octet_length(d::text)>2000000 then raise exception 'Backup too large';end if;
+  update public.family_state set data=d,revision=revision+1,updated_at=now() where owner_id=m.owner_id;
+ end if;
+ update public.reward_requests set status=case when p_approve then 'approved' else 'rejected' end,review_note=trim(p_note),reviewed_at=now() where id=r.id;
+ perform public.log_family_event(m.owner_id,case when p_approve then 'اعتماد استبدال مكافأة' else 'رفض استبدال مكافأة' end,r.child_id,r.reward_name||' · '||trim(p_note));
+end $$;
+revoke all on function public.request_reward(text,text) from public,anon;
+revoke all on function public.review_reward_request(uuid,boolean,text) from public,anon;
+grant execute on function public.request_reward(text,text) to authenticated;
+grant execute on function public.review_reward_request(uuid,boolean,text) to authenticated;
+notify pgrst,'reload schema';
+
 commit;
