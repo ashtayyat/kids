@@ -1,5 +1,5 @@
 import {can} from './family.mjs';
-import {balance} from './core.mjs';
+import {balance,isGameAttempt} from './core.mjs';
 export const DIFFICULTIES=['','سهل','متوسط','صعب'];
 export const GAME_NAMES={memory:'ذاكرة الصور',space:'مهمة الفضاء'};
 export const MEMORY_ICONS=['🦊','🐼','🦁','🐰','🦋','🐬','🦉','🐢','🐝','🐙'];
@@ -26,7 +26,7 @@ export function createDemoGames(C){let settings={daily_cap:20,max_difficulty:3,e
    if(!can(m,'reset_points'))throw Error('ليست لديك صلاحية تصفير النقاط');
    if(!a.p_reason?.trim())throw Error('أدخل سبب التصفير');
    if(a.p_player&&!roster().some(c=>c.id===a.p_player))throw Error('اختر مشاركًا صحيحًا');
-   const next=structuredClone(C.state),removed=next.attempts.filter(e=>e.kind==='game'&&(!a.p_player||e.child===a.p_player));
+   const next=structuredClone(C.state),removed=next.attempts.filter(e=>isGameAttempt(e)&&(!a.p_player||e.child===a.p_player));
    next.attempts=next.attempts.filter(e=>!removed.some(r=>r.id===e.id));
    if(next.children.some(c=>(!a.p_player||c.id===a.p_player)&&balance(next,c.id)<0))throw Error('لا يمكن التصفير لأن بعض نقاط الألعاب صُرفت على مكافآت؛ راجع سجل المكافآت أولًا.');
    for(const child of new Set(removed.map(e=>e.child)))(next.resetArchive??=[]).push({id:demoId(),child,date:C.today(),kind:'game_reset',note:a.p_reason,records:{attempts:removed.filter(e=>e.child===child)}});

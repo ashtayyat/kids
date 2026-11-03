@@ -3,11 +3,11 @@ export const levelLabels=c=>Array.isArray(c?.labels)&&c.labels.length===3?c.labe
 export const CATEGORIES=['معلومات عامة','رياضة','رياضيات','إنجليزي','للمبتدئين'];
 export function assessmentSummary(state,child,date,requests=[]){
  const criteria=state.criteria.filter(c=>!c.archived&&(!c.assigned_child||c.assigned_child===child));
- const evaluations=new Map(state.evaluations.filter(e=>e.child===child&&e.date===date).map(e=>[e.criterion,e]));
+ const evaluations=new Map(criteria.map(c=>[c.id,state.evaluations.filter(e=>e.child===child&&e.date===date&&e.criterion===c.id)]));const limit=c=>c.allow_repeat?Math.max(2,Math.min(20,c.max_per_day||3)):1;
  const maxPoints=c=>Math.max(0,...c.points);
- const dailyMax=criteria.reduce((n,c)=>n+maxPoints(c),0);
- const missing=criteria.filter(c=>!evaluations.has(c.id)).map(c=>({...c,maxPoints:maxPoints(c),requestStatus:requests.find(r=>r.child_id===child&&r.criterion_id===c.id&&r.day===date)?.status||null}));
- return {total:criteria.length,assessed:criteria.length-missing.length,dailyMax,weeklyMax:dailyMax*7,earned:criteria.reduce((n,c)=>n+(evaluations.get(c.id)?.points||0),0),missing,remainingMax:missing.reduce((n,c)=>n+c.maxPoints,0)};
+ const dailyMax=criteria.reduce((n,c)=>n+maxPoints(c)*limit(c),0);
+ const missing=criteria.filter(c=>evaluations.get(c.id).length<limit(c)).map(c=>({...c,maxPoints:maxPoints(c)*Math.max(0,limit(c)-evaluations.get(c.id).length),requestStatus:requests.find(r=>r.child_id===child&&r.criterion_id===c.id&&r.day===date)?.status||null}));
+ return {total:criteria.length,assessed:criteria.filter(c=>evaluations.get(c.id).length>0).length,dailyMax,weeklyMax:dailyMax*7,earned:criteria.reduce((n,c)=>n+evaluations.get(c.id).reduce((sum,e)=>sum+e.points,0),0),missing,remainingMax:missing.reduce((n,c)=>n+c.maxPoints,0)};
 }
 export function archiveCriterion(state,id){const c=state.criteria.find(c=>c.id===id&&!c.archived);if(!c)throw Error('المعيار غير موجود أو حُذف بالفعل');c.archived=true;return c;}
 export function catalogSummary(rows,field){const active=(rows||[]).filter(r=>!r.archived);return {active,count:active.length,total:active.reduce((n,r)=>n+r[field],0)};}
