@@ -14,7 +14,10 @@ export function requestError(status,data={},path=''){
  if(status===404&&['game_overview','start_game','game_view','game_step','configure_games','reset_game_points'].some(x=>path.includes(x)))return 'فعّل ألعاب العائلة بتشغيل upgrade-latest.sql في Supabase.';
  const gameMessages={'Finish previous stage for every player first':'أكمل المرحلة السابقة من نفس الصعوبة لكل مشارك في الطاقم أولًا.','Game disabled or difficulty restricted':'ولي الأمر أوقف اللعب أو حدّد صعوبة أقل.','Too many active games':'توجد مهام جارية كثيرة؛ أكمل إحداها قبل بدء مهمة جديدة.','Game expired; start again':'انتهت مدة الجلسة؛ ابدأ لعبة جديدة.','Game revision conflict':'تغيّرت اللعبة في جهاز آخر؛ حُدّثت البطاقات، حاول مجددًا.','Question already changed':'تمت الإجابة عن هذا السؤال؛ انتقل للسؤال الحالي.','Game no longer active':'انتهت هذه المرحلة؛ راجع النتيجة أو ابدأ مجددًا.','Game disabled':'أوقف ولي الأمر هذه اللعبة أو غيّر الصعوبة المتاحة.','Invalid crew size':'اختر مشاركين على الأقل لمهمة الفضاء ومشاركًا واحدًا للذاكرة.'};
  if(gameMessages[message])return gameMessages[message];
- if(status===404&&['save_child_customization','add_encouragement_phrase','submit_point_request_with_evidence'].some(p=>path.includes(p)))return 'فعّل الصور والتخصيص والتشجيع بتشغيل أحدث upgrade-latest.sql.';
+ if(status===404&&['save_child_customization','add_encouragement_phrase','submit_point_request_with_evidence','edit_family_suggestion','review_family_suggestion'].some(p=>path.includes(p)))return 'فعّل آخر تحديث للموقع بتشغيل أحدث upgrade-latest.sql.';
+ if(message==='Suggestion changed')return 'تغيّر المقترح أثناء مراجعته؛ حدّث القائمة وافتحه من جديد.';
+ if(message==='Approved suggestion cannot be edited')return 'المقترح معتمد بالفعل؛ عدّل المكافأة أو المهمة الناتجة من صفحتها.';
+ if(message==='Cost required')return 'أدخل تكلفة أكبر من صفر عند الموافقة على المكافأة. يمكنك رفض المقترح أو إعادته دون تحديد تكلفة.';
  if(message==='Phrase limit reached')return 'يمكن حفظ ٥٠ عبارة خاصة للأسرة؛ استخدم عبارة محفوظة أو اكتب رسالتك دون حفظها.';
  if(message==='Invalid evidence'||message==='Invalid photo')return 'اختر صورة JPEG أو PNG أو WebP بالحجم المسموح.';
  if(message==='Backup too large')return 'وصلت مساحة بيانات الأسرة إلى الحد الحالي (٢ ميغابايت). صدّر نسخة احتياطية وقلّل الصور القديمة قبل المحاولة.';

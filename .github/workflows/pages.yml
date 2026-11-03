@@ -27,6 +27,8 @@ jobs:
         run: |
           mkdir public
           cp index.html app.js core.mjs identity.mjs family.mjs family-ui.mjs learning.mjs games.mjs game-ui.mjs personalize.mjs style.css logo.svg public/
+      - name: Version browser assets
+        run: node scripts/stamp-assets.mjs
       - name: Configure shared project
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
