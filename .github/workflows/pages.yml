@@ -26,7 +26,7 @@ jobs:
       - name: Prepare public files only
         run: |
           mkdir public
-          cp index.html app.js core.mjs identity.mjs family.mjs family-ui.mjs style.css logo.svg public/
+          cp index.html app.js core.mjs identity.mjs family.mjs family-ui.mjs learning.mjs style.css logo.svg public/
       - name: Configure shared project
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}

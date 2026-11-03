@@ -12,6 +12,7 @@ Deno.serve(async req=>{
   const {data:actor,error:actorError}=await admin.from('family_members').select('*').eq('user_id',auth.user.id).single();
   if(actorError||actor?.role!=='parent'||!actor.active||actor.user_id!==actor.owner_id)return reply({error:'إدارة المستخدمين لولي الأمر الرئيسي (مدير الموقع) فقط'},403);
   const raw=await req.text();if(raw.length>4096)return reply({error:'طلب كبير جدًا'},400);const body=JSON.parse(raw),action=body.action||'create';
+  if(action==='version')return reply({version:9});
   let logChild:string|null=action==='create'&&body.role==='child'?body.childId:null;
   const log=async(kind:string)=>{await admin.from('family_audit').insert({owner_id:actor.owner_id,actor_id:actor.user_id,child_id:action==='delete'?null:logChild,kind,detail:action==='delete'?'حذف حساب كامل':String(body.displayName||body.username||'').slice(0,100)})};
   if(action!=='create'){

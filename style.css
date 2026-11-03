@@ -8,3 +8,7 @@
 .journey.car .journey-runner{transform:scaleX(-1)}
 .hero .hero-logo{float:left;width:150px;max-width:35%;height:auto;border-radius:14px;margin:0 18px 12px 0}
 @media(max-width:760px){.hero .hero-logo{width:110px;margin-right:12px}}
+
+.journey h3{margin:0}.journey-avatar{width:42px;height:42px;font-size:26px;border-radius:14px}
+
+header{flex-wrap:wrap}
