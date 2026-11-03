@@ -12,3 +12,5 @@
 .journey h3{margin:0}.journey-avatar{width:42px;height:42px;font-size:26px;border-radius:14px}
 
 header{flex-wrap:wrap}
+
+.assessment-summary{margin-block:20px}.assessment-summary .grid{margin:12px 0}.assessment-list{padding:0;list-style:none}.assessment-list li{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line);padding:12px 0}.assessment-list li>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.success-text{color:var(--green);font-weight:bold}
