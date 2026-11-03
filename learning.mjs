@@ -10,6 +10,7 @@ export function assessmentSummary(state,child,date,requests=[]){
  return {total:criteria.length,assessed:criteria.length-missing.length,dailyMax,weeklyMax:dailyMax*7,earned:criteria.reduce((n,c)=>n+(evaluations.get(c.id)?.points||0),0),missing,remainingMax:missing.reduce((n,c)=>n+c.maxPoints,0)};
 }
 export function archiveCriterion(state,id){const c=state.criteria.find(c=>c.id===id&&!c.archived);if(!c)throw Error('المعيار غير موجود أو حُذف بالفعل');c.archived=true;return c;}
+export function catalogSummary(rows,field){const active=(rows||[]).filter(r=>!r.archived);return {active,count:active.length,total:active.reduce((n,r)=>n+r[field],0)};}
 export const extraCriteria=()=>[
  {id:'homework',name:'حل الواجبات',points:[0,2,4]},
  ...[['fajr','الفجر'],['dhuhr','الظهر'],['asr','العصر'],['maghrib','المغرب'],['isha','العشاء']].map(([id,name])=>({id:'prayer_'+id,name:'صلاة '+name,labels:['في وقتها','جماعة','قضاء'],points:[3,5,1]}))
