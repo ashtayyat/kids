@@ -28,3 +28,5 @@ header{flex-wrap:wrap}
 @media print{.list-filters,.edit-menu{display:none}}
 
 #logout{position:fixed;top:20px;left:20px;z-index:50;margin:0;background:#fff;color:var(--green);border:1px solid var(--line);box-shadow:0 3px 12px #163d2512;min-height:44px}header{padding-inline-end:145px}@media(max-width:760px){#logout{top:16px;left:16px;font-size:14px;padding:10px 14px}header{padding-inline-end:0}}@media print{#logout{display:none!important}}
+
+.account-name{font-weight:700;font-size:15px;overflow-wrap:anywhere;max-width:100%;background:#e7f2eb;color:var(--green)}
