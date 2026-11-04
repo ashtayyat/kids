@@ -7,7 +7,7 @@ test('server memory and cooperative space enforce hidden answers, progression, d
  await db.exec(readFileSync(new URL('../migration-v17.sql',import.meta.url),'utf8'));
  const p='c0000000-0000-0000-0000-000000000001',a='c0000000-0000-0000-0000-000000000002',b='c0000000-0000-0000-0000-000000000003',o='c0000000-0000-0000-0000-000000000004',p2='c0000000-0000-0000-0000-000000000005';for(const id of[p,a,b,o,p2])await db.query('insert into auth.users(id) values($1)',[id]);
  async function as(id){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')}
- async function approvePending(){await as(p);const ov=(await db.query('select public.game_overview() d')).rows[0].d;for(const r of ov.requests.filter(r=>r.status==='pending'&&!r.reset))await db.query('select public.review_game_points($1,true,$2)',[r.id,'موافقة اختبار']);}
+ async function approvePending(){await as(p);const ov=(await db.query('select public.game_overview() d')).rows[0].d;const ids=ov.requests.filter(r=>r.status==='pending'&&!r.reset).map(r=>r.id);if(ids.length){await db.query("select public.review_pending_batch('game',$1,true,$2)",[ids,'موافقة اختبار']);await assert.rejects(db.query("select public.review_pending_batch('game',$1,true,'')",[ids]),/changed/);}}
  const view=async(id)=>(await db.query('select public.game_view($1) v',[id])).rows[0].v;
  const start=async(game,diff,stage,children)=>(await db.query('select public.start_game($1,$2,$3,$4) id',[game,diff,stage,children])).rows[0].id;
  const step=(id,child,choice,revision,question=0)=>db.query('select public.game_step($1,$2,$3,$4,$5) v',[id,child,choice,revision,question]);
