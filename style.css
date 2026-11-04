@@ -23,3 +23,6 @@ header{flex-wrap:wrap}
 .journey.car .journey-runner:has(.family-car){transform:none}
 
 .points-summary{margin:1rem 0;padding:1rem;background:#f4f8f3;border:1px solid #dce9df;border-radius:16px;text-align:right}.points-summary h4{margin:0 0 .7rem}.points-summary dl{margin:0}.points-summary dl>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:.55rem 0}.points-summary dt{flex:1}.points-summary dd{margin:0;font-weight:700;white-space:nowrap}.points-summary .points-remaining{border-top:1px solid #d5e3d9;padding-top:.65rem;color:#166c61}.points-summary small{display:block;color:#667d80;font-size:.75rem;line-height:1.6}
+
+[data-filter-item][hidden]{display:none!important}.edit-menu{margin-top:12px}.edit-menu[open]{padding:12px;border:1px solid #dce9df;border-radius:14px;background:#f7faf5}.edit-menu summary{cursor:pointer}.edit-menu button{margin-top:8px}.list-filters .toolbar{align-items:end}.list-filters input[type=search]{min-width:180px}fieldset{border:1px solid #dce9df;border-radius:14px;margin:12px 0;padding:16px}fieldset legend{font-weight:bold}
+@media print{.list-filters,.edit-menu{display:none}}
